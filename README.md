@@ -27,7 +27,7 @@ Effectuez les migrations de la base de données :
 
     python manage.py migrate
 
-Créez un superutilisateur pour accéder à l'interface d'administration de Django :
+Créez un superutilisateur pour s'authentifier à l'application :
 
     python manage.py createsuperuser
 

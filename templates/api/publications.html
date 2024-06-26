@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Publications</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var token = localStorage.getItem('access_token');
+            if (!token || isTokenExpired(token)) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = "{% url 'login' %}";
+            }
+
+            function isTokenExpired(token) {
+                if (!token) {
+                    return true;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const expirationTime = payload.exp * 1000; // Convertir l'expiration en millisecondes
+                const currentTime = new Date().getTime();
+
+                return currentTime > expirationTime;
+            }
+
+            // Afficher les publications
+            function loadPublications() {
+                $.ajax({
+                    url: '/api/publications/',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function(data) {
+                        var publicationsList = $('#publications-list');
+                        publicationsList.empty();
+                        data.forEach(function(publication) {
+                            var li = $('<li>').text(publication.titre);
+                            var editButton = $('<button>').text('Modifier').click(function() {
+                                $('#publication-id').val(publication.id);
+                                $('#publication-titre').val(publication.titre);
+                                $('#publication-resume').val(publication.resume);
+                                $('#publication-projet-associe').val(publication.projet_associe);
+                                $('#publication-date-publication').val(publication.date_publication);
+                            });
+                            var deleteButton = $('<button>').text('Supprimer').click(function() {
+                                deletePublication(publication.id);
+                            });
+                            li.append(editButton, deleteButton);
+                            publicationsList.append(li);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            // Charger les projets de recherche pour la liste déroulante
+            function loadProjets() {
+                $.ajax({
+                    url: '/api/projets/',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function(data) {
+                        var projetAssocieSelect = $('#publication-projet-associe');
+                        projetAssocieSelect.empty();
+                        data.forEach(function(projet) {
+                            var option = $('<option>').val(projet.id).text(projet.titre);
+                            projetAssocieSelect.append(option);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            // Ajouter une publication
+            $('#add-publication-form').submit(function(event) {
+                event.preventDefault();
+                var titre = $('#publication-titre').val();
+                var resume = $('#publication-resume').val();
+                var projetAssocie = $('#publication-projet-associe').val();
+                var datePublication = $('#publication-date-publication').val();
+                $.ajax({
+                    url: '/api/publications/',
+                    type: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    data: JSON.stringify({
+                        titre: titre,
+                        resume: resume,
+                        projet_associe: projetAssocie,
+                        date_publication: datePublication
+                    }),
+                    contentType: 'application/json',
+                    success: function() {
+                        loadPublications();
+                        $('#publication-titre').val('');
+                        $('#publication-resume').val('');
+                        $('#publication-projet-associe').val('');
+                        $('#publication-date-publication').val('');
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            });
+
+            // Supprimer une publication
+            function deletePublication(id) {
+                $.ajax({
+                    url: '/api/publications/' + id + '/',
+                    type: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function() {
+                        loadPublications();
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            loadPublications();
+            loadProjets();
+        });
+    </script>
+</head>
+<body>
+    <h1>Liste des Publications</h1>
+    <ul id="publications-list"></ul>
+
+    <h2>Ajouter une Publication</h2>
+    <form id="add-publication-form">
+        <input type="text" id="publication-titre" placeholder="Titre" required>
+        <textarea id="publication-resume" placeholder="Résumé" required></textarea>
+        <select id="publication-projet-associe" required>
+            <option value="">Sélectionnez un projet associé</option>
+        </select>
+        <input type="date" id="publication-date-publication" placeholder="Date de publication" required>
+        <button type="submit">Ajouter</button>
+    </form>
+</body>
+</html>

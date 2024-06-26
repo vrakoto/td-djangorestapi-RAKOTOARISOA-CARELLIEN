@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chercheurs</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var token = localStorage.getItem('access_token');
+            if (!token || isTokenExpired(token)) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = "{% url 'login' %}";
+            }
+
+            function isTokenExpired(token) {
+                if (!token) {
+                    return true;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const expirationTime = payload.exp * 1000; // Convertir l'expiration en millisecondes
+                const currentTime = new Date().getTime();
+
+                return currentTime > expirationTime;
+            }
+
+
+            // Afficher les chercheurs
+            function loadChercheurs() {
+                $.ajax({
+                    url: '/api/chercheurs/',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function (data) {
+                        var chercheursList = $('#chercheurs-list');
+                        chercheursList.empty();
+                        data.forEach(function (chercheur) {
+                            var li = $('<li>').text(chercheur.nom + ' - ' + chercheur.specialite);
+                            var editButton = $('<button>').text('Modifier').click(function () {
+                                $('#chercheur-id').val(chercheur.id);
+                                $('#chercheur-nom').val(chercheur.nom);
+                                $('#chercheur-specialite').val(chercheur.specialite);
+                            });
+                            var deleteButton = $('<button>').text('Supprimer').click(function () {
+                                deleteChercheur(chercheur.id);
+                            });
+                            li.append(editButton, deleteButton);
+                            chercheursList.append(li);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            // Ajouter un chercheur
+            $('#add-chercheur-form').submit(function (event) {
+                event.preventDefault();
+                var nom = $('#chercheur-nom').val();
+                var specialite = $('#chercheur-specialite').val();
+                $.ajax({
+                    url: '/api/chercheurs/',
+                    type: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    data: JSON.stringify({
+                        nom: nom,
+                        specialite: specialite
+                    }),
+                    contentType: 'application/json',
+                    success: function () {
+                        loadChercheurs();
+                        $('#chercheur-nom').val('');
+                        $('#chercheur-specialite').val('');
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            });
+
+            // Supprimer un chercheur
+            function deleteChercheur(id) {
+                $.ajax({
+                    url: '/api/chercheurs/' + id + '/',
+                    type: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function () {
+                        loadChercheurs();
+                    },
+                    error: function (xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            loadChercheurs();
+        });
+    </script>
+</head>
+
+<body>
+    <h1>Liste des Chercheurs</h1>
+    <ul id="chercheurs-list"></ul>
+
+    <h2>Ajouter un Chercheur</h2>
+    <form id="add-chercheur-form">
+        <input type="text" id="chercheur-nom" placeholder="Nom" required>
+        <input type="text" id="chercheur-specialite" placeholder="Spécialité" required>
+        <button type="submit">Ajouter</button>
+    </form>
+</body>
+
+</html>

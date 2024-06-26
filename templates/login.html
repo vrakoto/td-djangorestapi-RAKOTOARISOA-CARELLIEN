@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connexion</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var token = localStorage.getItem('access_token');
+            var refreshToken = localStorage.getItem('refresh_token');
+
+            if (token && !isTokenExpired(token)) {
+                window.location.href = "{% url 'index' %}";
+            } else if (refreshToken) {
+                // Tentative de rafraîchissement du token
+                $.ajax({
+                    url: '/api/token/refresh/',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        refresh: refreshToken
+                    }),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        localStorage.setItem('access_token', data.access);
+                        window.location.href = "{% url 'index' %}";
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                    }
+                });
+            }
+
+            function isTokenExpired(token) {
+                if (!token) {
+                    return true;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const expirationTime = payload.exp * 1000; // Convertir l'expiration en millisecondes
+                const currentTime = new Date().getTime();
+
+                return currentTime > expirationTime;
+            }
+
+            $('#login-form').submit(function(event) {
+                event.preventDefault();
+                var username = $('#username').val();
+                var password = $('#password').val();
+                
+                $.ajax({
+                    url: '/api/token/',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        username: username,
+                        password: password
+                    }),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        localStorage.setItem('access_token', data.access);
+                        localStorage.setItem('refresh_token', data.refresh);
+                        window.location.href = "{% url 'index' %}";  // Utilisez l'URL nommée 'index'
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Connexion</h1>
+    <form id="login-form">
+        <input type="text" id="username" placeholder="Nom d'utilisateur" required>
+        <input type="password" id="password" placeholder="Mot de passe" required>
+        <button type="submit">Se connecter</button>
+    </form>
+</body>
+</html>

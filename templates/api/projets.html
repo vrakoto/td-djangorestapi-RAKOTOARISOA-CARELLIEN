@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projets de Recherche</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var token = localStorage.getItem('access_token');
+            if (!token || isTokenExpired(token)) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                window.location.href = "{% url 'login' %}";
+            }
+
+            function isTokenExpired(token) {
+                if (!token) {
+                    return true;
+                }
+
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const expirationTime = payload.exp * 1000; // Convertir l'expiration en millisecondes
+                const currentTime = new Date().getTime();
+
+                return currentTime > expirationTime;
+            }
+
+            // Afficher les projets de recherche
+            function loadProjets() {
+                $.ajax({
+                    url: '/api/projets/',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function(data) {
+                        var projetsList = $('#projets-list');
+                        projetsList.empty();
+                        data.forEach(function(projet) {
+                            var li = $('<li>').text(projet.titre);
+                            var editButton = $('<button>').text('Modifier').click(function() {
+                                $('#projet-id').val(projet.id);
+                                $('#projet-titre').val(projet.titre);
+                                $('#projet-description').val(projet.description);
+                                $('#projet-date-debut').val(projet.date_debut);
+                                $('#projet-date-fin-prevue').val(projet.date_fin_prevue);
+                                $('#projet-chef-projet').val(projet.chef_de_projet);
+                            });
+                            var deleteButton = $('<button>').text('Supprimer').click(function() {
+                                deleteProjet(projet.id);
+                            });
+                            li.append(editButton, deleteButton);
+                            projetsList.append(li);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            // Charger les chercheurs pour la liste déroulante
+            function loadChercheurs() {
+                $.ajax({
+                    url: '/api/chercheurs/',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function(data) {
+                        var chefProjetSelect = $('#projet-chef-projet');
+                        chefProjetSelect.empty();
+                        data.forEach(function(chercheur) {
+                            var option = $('<option>').val(chercheur.id).text(chercheur.nom);
+                            chefProjetSelect.append(option);
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            // Ajouter un projet de recherche
+            $('#add-projet-form').submit(function(event) {
+                event.preventDefault();
+                var titre = $('#projet-titre').val();
+                var description = $('#projet-description').val();
+                var dateDebut = $('#projet-date-debut').val();
+                var dateFinPrevue = $('#projet-date-fin-prevue').val();
+                var chefProjet = $('#projet-chef-projet').val();
+                $.ajax({
+                    url: '/api/projets/',
+                    type: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    data: JSON.stringify({
+                        titre: titre,
+                        description: description,
+                        date_debut: dateDebut,
+                        date_fin_prevue: dateFinPrevue,
+                        chef_de_projet: chefProjet
+                    }),
+                    contentType: 'application/json',
+                    success: function() {
+                        loadProjets();
+                        $('#projet-titre').val('');
+                        $('#projet-description').val('');
+                        $('#projet-date-debut').val('');
+                        $('#projet-date-fin-prevue').val('');
+                        $('#projet-chef-projet').val('');
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            });
+
+            // Supprimer un projet de recherche
+            function deleteProjet(id) {
+                $.ajax({
+                    url: '/api/projets/' + id + '/',
+                    type: 'DELETE',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function() {
+                        loadProjets();
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Erreur:', error);
+                    }
+                });
+            }
+
+            loadProjets();
+            loadChercheurs();
+        });
+    </script>
+</head>
+<body>
+    <h1>Liste des Projets de Recherche</h1>
+    <ul id="projets-list"></ul>
+
+    <h2>Ajouter un Projet de Recherche</h2>
+    <form id="add-projet-form">
+        <input type="text" id="projet-titre" placeholder="Titre" required>
+        <textarea id="projet-description" placeholder="Description" required></textarea>
+        <input type="date" id="projet-date-debut" placeholder="Date de début" required>
+        <input type="date" id="projet-date-fin-prevue" placeholder="Date de fin prévue" required>
+        <select id="projet-chef-projet" required>
+            <option value="">Sélectionnez un chef de projet</option>
+        </select>
+        <button type="submit">Ajouter</button>
+    </form>
+</body>
+</html>

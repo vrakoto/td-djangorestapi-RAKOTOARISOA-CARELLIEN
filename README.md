@@ -2,7 +2,7 @@
 
 Clonez le dépôt du projet depuis GitHub :
 
-    git clone https://github.com/votre-utilisateur/projet-recherche-chercheur.git
+    git clone https://github.com/vrakoto/td-djangorestapi-RAKOTOARISOA-CARELLIEN.git
 
 Accédez au répertoire du projet :
 

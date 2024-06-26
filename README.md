@@ -6,7 +6,7 @@ Clonez le dépôt du projet depuis GitHub :
 
 Accédez au répertoire du projet :
 
-    cd projet-recherche-chercheur
+    cd td-djangorestapi-RAKOTOARISOA-CARELLIEN
 
 Créez un environnement virtuel Python :
 

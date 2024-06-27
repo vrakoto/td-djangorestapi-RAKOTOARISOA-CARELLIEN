@@ -39,7 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api',
+    'corsheaders',
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000"
+]
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Configuration pour l'authentification et les permissions
@@ -60,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'projet_recherche_chercheur.urls'

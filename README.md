@@ -4,13 +4,10 @@ Clonez le dépôt du projet depuis GitHub :
 
     git clone https://github.com/vrakoto/td-djangorestapi-RAKOTOARISOA-CARELLIEN.git
 
-Accédez au répertoire du projet :
 
-    cd td-djangorestapi-RAKOTOARISOA-CARELLIEN
+Créez un environnement virtuel Python à la racine du projet :
 
-Créez un environnement virtuel Python :
-
-    python3 -m venv venv
+    py -m venv venv
 
 Activez l'environnement virtuel sur Windows :
 
